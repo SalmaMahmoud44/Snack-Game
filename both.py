@@ -3,6 +3,7 @@ import sys
 import time
 import random
 import numpy as np
+import heapq
 
 frame_size_x = 720
 frame_size_y = 480
@@ -34,7 +35,7 @@ apple_image = pygame.transform.scale(apple_image, (30, 30))
 
 class SnakeGame:
     def __init__(self):
-        pass
+        self.ai_algorithm = 'greedy'  # default
 
     def draw_text(self, text, font, color, surface, x, y, glow=False):
         if glow:
@@ -83,11 +84,46 @@ class SnakeGame:
 
         return change
 
+    def a_star(self, start, goal, body):
+        moves = [(0, 10), (0, -10), (-10, 0), (10, 0)]
+        open_set = [(0, start)]
+        came_from = {}
+        g_score = {tuple(start): 0}
+        f_score = {tuple(start): self.dist(start, goal)}
+        body_set = set(tuple(b) for b in body)
+
+        while open_set:
+            _, current = heapq.heappop(open_set)
+            if list(current) == list(goal):
+                while tuple(current) != tuple(start):
+                    prev = came_from[tuple(current)]
+                    if tuple(prev) == tuple(start):
+                        dx = current[0] - prev[0]
+                        dy = current[1] - prev[1]
+                        if dx == 10: return 'RIGHT'
+                        if dx == -10: return 'LEFT'
+                        if dy == 10: return 'DOWN'
+                        if dy == -10: return 'UP'
+                    current = prev
+
+            for dx, dy in moves:
+                neighbor = (current[0] + dx, current[1] + dy)
+                if neighbor in body_set or not (0 <= neighbor[0] < frame_size_x and 0 <= neighbor[1] < frame_size_y):
+                    continue
+                tentative_g = g_score[tuple(current)] + 1
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    f = tentative_g + self.dist(neighbor, goal)
+                    f_score[neighbor] = f
+                    heapq.heappush(open_set, (f, neighbor))
+
+        return self.greedy('RIGHT', np.array(start), np.array(goal), body)  # fallback
+
     def snake_game(self, mode='manual'):
         snake_pos = [100, 50]
         snake_body = [[100, 50], [90, 50], [80, 50]]
-        food_pos = [random.randrange(1, (frame_size_x // 30)) * 30,
-                    random.randrange(1, (frame_size_y // 30)) * 30]
+        food_pos = [random.randrange(1, (frame_size_x // 30)) * 30, random.randrange(1, (frame_size_y // 30)) * 30]
         food_spawn = True
         direction = 'RIGHT'
         change_to = direction
@@ -112,7 +148,10 @@ class SnakeGame:
                             change_to = 'RIGHT'
 
             if mode == 'ai':
-                change_to = self.greedy(direction, np.array(snake_pos), np.array(food_pos), snake_body)
+                if self.ai_algorithm == 'greedy':
+                    change_to = self.greedy(direction, np.array(snake_pos), np.array(food_pos), snake_body)
+                elif self.ai_algorithm == 'astar':
+                    change_to = self.a_star(snake_pos, food_pos, snake_body)
 
             direction = change_to
 
@@ -143,8 +182,7 @@ class SnakeGame:
                 snake_body.pop()
 
             if not food_spawn:
-                food_pos = [random.randrange(1, (frame_size_x // 30)) * 30,
-                            random.randrange(1, (frame_size_y // 30)) * 30]
+                food_pos = [random.randrange(1, (frame_size_x // 30)) * 30, random.randrange(1, (frame_size_y // 30)) * 30]
             food_spawn = True
 
             game_window.blit(background, (0, 0))
@@ -209,11 +247,13 @@ class SnakeGame:
             self.draw_text('Snake Game', font_big, green, game_window, frame_size_x // 2 - 170, 100, glow=True)
 
             manual_button = pygame.Rect(frame_size_x // 2 - 150, 220, 300, 50)
-            ai_button = pygame.Rect(frame_size_x // 2 - 150, 300, 300, 50)
-            exit_button = pygame.Rect(frame_size_x // 2 - 150, 380, 300, 50)
+            ai_greedy_button = pygame.Rect(frame_size_x // 2 - 150, 300, 300, 50)
+            ai_astar_button = pygame.Rect(frame_size_x // 2 - 150, 360, 300, 50)
+            exit_button = pygame.Rect(frame_size_x // 2 - 150, 420, 300, 50)
 
             self.create_button(game_window, 'Manual Mode', font_small, manual_button, button_color, hover_color, mouse_pos)
-            self.create_button(game_window, 'AI Mode', font_small, ai_button, button_color, hover_color, mouse_pos)
+            self.create_button(game_window, 'AI Mode (Greedy)', font_small, ai_greedy_button, button_color, hover_color, mouse_pos)
+            self.create_button(game_window, 'AI Mode (A*)', font_small, ai_astar_button, button_color, hover_color, mouse_pos)
             self.create_button(game_window, 'Exit', font_small, exit_button, button_color, hover_color, mouse_pos)
 
             pygame.display.update()
@@ -225,7 +265,11 @@ class SnakeGame:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if manual_button.collidepoint(mouse_pos):
                         self.snake_game(mode='manual')
-                    if ai_button.collidepoint(mouse_pos):
+                    if ai_greedy_button.collidepoint(mouse_pos):
+                        self.ai_algorithm = 'greedy'
+                        self.snake_game(mode='ai')
+                    if ai_astar_button.collidepoint(mouse_pos):
+                        self.ai_algorithm = 'astar'
                         self.snake_game(mode='ai')
                     if exit_button.collidepoint(mouse_pos):
                         pygame.quit()
