@@ -35,7 +35,7 @@ apple_image = pygame.transform.scale(apple_image, (30, 30))
 
 class SnakeGame:
     def __init__(self):
-        self.ai_algorithm = 'greedy'  # default
+        self.ai_algorithm = 'greedy'
 
     def draw_text(self, text, font, color, surface, x, y, glow=False):
         if glow:
@@ -60,7 +60,8 @@ class SnakeGame:
         game_window.blit(score_surface, score_rect)
 
     def dist(self, state, goal):
-        return abs(goal[0] - state[0]) + abs(goal[1] - state[1])
+        # Heuristic: Manhattan distance between two points
+        return abs(goal[0] - state[0]) + abs(goal[1] - state[1])  # heuristic value
 
     def greedy(self, direction, pos, goal, body):
         directions = ['DOWN', 'UP', 'LEFT', 'RIGHT']
@@ -118,10 +119,12 @@ class SnakeGame:
                     f_score[neighbor] = f
                     heapq.heappush(open_set, (f, neighbor))
 
-        return self.greedy('RIGHT', np.array(start), np.array(goal), body)  # fallback
+        return self.greedy('RIGHT', np.array(start), np.array(goal), body)
 
     def snake_game(self, mode='manual'):
-        snake_pos = [100, 50]
+        snake_pos = [100, 50] # Start position of the snake (initial state)
+        # Goal position (apple)
+        # random position for apple
         snake_body = [[100, 50], [90, 50], [80, 50]]
         food_pos = [random.randrange(1, (frame_size_x // 30)) * 30, random.randrange(1, (frame_size_y // 30)) * 30]
         food_spawn = True
@@ -226,9 +229,11 @@ class SnakeGame:
             pygame.display.update()
 
             for event in pygame.event.get():
+                #when I close the game
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                #when I click any button
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if main_menu_button.collidepoint(mouse_pos):
                         self.main_menu()
