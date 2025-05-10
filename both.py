@@ -5,6 +5,8 @@ import random
 import numpy as np
 import heapq
 
+# Snake settings
+
 frame_size_x = 720
 frame_size_y = 480
 difficulty = 20
@@ -37,6 +39,7 @@ class SnakeGame:
     def __init__(self):
         self.ai_algorithm = 'greedy'
 
+    #show the text in screen
     def draw_text(self, text, font, color, surface, x, y, glow=False):
         if glow:
             glow_surface = font.render(text, True, (color[0], color[1], color[2]))
@@ -69,16 +72,19 @@ class SnakeGame:
         state_dict = {d: pos + m for d, m in zip(directions, moves)}
         distance_dict = {d: self.dist(pos + m, goal) for d, m in zip(directions, moves)}
 
+        #see if the body of Snake
         for d in directions.copy():
             if list(state_dict[d]) in body:
                 directions.remove(d)
 
+        #change direction
         change = direction
         if len(directions) == 0:
             return change
         if direction not in directions:
             change = directions[0]
 
+        #search for shorter way
         for d in directions:
             if distance_dict[d] < distance_dict[change]:
                 change = d
@@ -89,12 +95,15 @@ class SnakeGame:
         moves = [(0, 10), (0, -10), (-10, 0), (10, 0)]
         open_set = [(0, start)]
         came_from = {}
+        #store the actual value
         g_score = {tuple(start): 0}
+        #store the evaluation function = actual + estimated
         f_score = {tuple(start): self.dist(start, goal)}
         body_set = set(tuple(b) for b in body)
 
         while open_set:
             _, current = heapq.heappop(open_set)
+
             if list(current) == list(goal):
                 while tuple(current) != tuple(start):
                     prev = came_from[tuple(current)]
@@ -108,9 +117,13 @@ class SnakeGame:
                     current = prev
 
             for dx, dy in moves:
+                #new position
                 neighbor = (current[0] + dx, current[1] + dy)
+
+                #check the body and wall avoids it to win
                 if neighbor in body_set or not (0 <= neighbor[0] < frame_size_x and 0 <= neighbor[1] < frame_size_y):
                     continue
+
                 tentative_g = g_score[tuple(current)] + 1
                 if neighbor not in g_score or tentative_g < g_score[neighbor]:
                     came_from[neighbor] = current
@@ -122,10 +135,11 @@ class SnakeGame:
         return self.greedy('RIGHT', np.array(start), np.array(goal), body)
 
     def snake_game(self, mode='manual'):
-        snake_pos = [100, 50] # Start position of the snake (initial state)
+        # Start position of the snake (initial state)
+        snake_pos = [100, 50]
+        snake_body = [[100, 50], [90, 50], [80, 50]]
         # Goal position (apple)
         # random position for apple
-        snake_body = [[100, 50], [90, 50], [80, 50]]
         food_pos = [random.randrange(1, (frame_size_x // 30)) * 30, random.randrange(1, (frame_size_y // 30)) * 30]
         food_spawn = True
         direction = 'RIGHT'
