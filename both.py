@@ -72,7 +72,7 @@ class SnakeGame:
         state_dict = {d: pos + m for d, m in zip(directions, moves)}
         distance_dict = {d: self.dist(pos + m, goal) for d, m in zip(directions, moves)}
 
-        #see if the body of Snake
+        #see the body of Snake
         for d in directions.copy():
             if list(state_dict[d]) in body:
                 directions.remove(d)
@@ -104,6 +104,7 @@ class SnakeGame:
         while open_set:
             _, current = heapq.heappop(open_set)
 
+            #make sure we have arrived the goal
             if list(current) == list(goal):
                 while tuple(current) != tuple(start):
                     prev = came_from[tuple(current)]
