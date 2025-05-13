@@ -185,11 +185,13 @@ class SnakeGame:
             if snake_pos[0] < 0 or snake_pos[0] > frame_size_x - 10 or snake_pos[1] < 0 or snake_pos[1] > frame_size_y - 10:
                 game_over_flag = True
 
+            #add head
             snake_body.insert(0, list(snake_pos))
 
             snake_head_rect = pygame.Rect(snake_pos[0], snake_pos[1], 10, 10)
             apple_rect = pygame.Rect(food_pos[0], food_pos[1], 30, 30)
 
+            #check if snake ate apple
             if snake_head_rect.colliderect(apple_rect):
                 score += 1
                 food_spawn = False
@@ -204,10 +206,11 @@ class SnakeGame:
             food_spawn = True
 
             game_window.blit(background, (0, 0))
-
+            #draw body of snake
             for pos in snake_body:
                 pygame.draw.rect(game_window, green, pygame.Rect(pos[0], pos[1], 10, 10))
 
+            # draw apple
             game_window.blit(apple_image, (food_pos[0], food_pos[1]))
 
             for block in snake_body[1:]:
